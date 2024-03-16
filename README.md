@@ -3,7 +3,7 @@ The implementation of the system for SemEval-2023 Task 7: Natural Language Infer
 
 
 # Note for Ashok:
-server : `.182`
-location : `/media/Ext_4T_SSD/ASHOK_NLP_DS207/NLI4CT_DS207`
-conda env: `nlp_1`
+server : `.182`  
+location : `/media/Ext_4T_SSD/ASHOK_NLP_DS207/NLI4CT_DS207`  
+conda env: `nlp_1`  
 
