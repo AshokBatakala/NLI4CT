@@ -6,7 +6,7 @@ DEV_PATH = "data/dev.json"
 TEST_PATH = "data/test.json"
 
 ###TASK 1
-def generate_nli_data(file_path):
+def generate_nli_data(file_path,return_sections_types=False):
     '''
     Generates data from clinical trials for Task 1: Textual entailment (NLI).
 
@@ -41,6 +41,11 @@ def generate_nli_data(file_path):
     primary_indices = df.Primary_evidence_index 
     secondary_indices = df.Secondary_evidence_index
     sections, types = df.Section_id, df.Type
+    
+    if return_sections_types:
+        print("returning sections and types")
+        print("warning: Please make sure that you really want to return sections and types.")
+        return sections.tolist(), types.tolist()
 
     #Generate evidence texts for each claim.
     for claim_idx in range(len(claims)):
