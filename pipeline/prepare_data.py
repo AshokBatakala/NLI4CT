@@ -14,7 +14,11 @@ def generate_nli_data(file_path):
         file_path (str): Path to the JSON of the dataset.
 
     Returns:
-        joint_data: List of training instances in form of "claim [SEP] evidence_text" (str)
+        joint_data: List of training instances in form of "claim [SEP] evidence_text" (str) 
+                    [ only those sentences that are marked as evidence of the claim. So, during inferece,
+                    we first need to find the evidence sentences and then use them to generate the joint_data. ]
+
+
         labels: List of labels, either 1 for "Entailment" or 0 for "Contradiction" (int)
     '''
 
@@ -26,6 +30,10 @@ def generate_nli_data(file_path):
     claims = df.Statement.tolist()
     labels = df.Label.tolist()
     labels = map(lambda x : 1 if x == "Entailment" else 0, labels)
+    #change the map object to list
+    labels = list(labels)
+
+
 
     #(Prepare to) Extract all evidence sentences from clinical trials
     evidence_texts = list()
@@ -35,30 +43,30 @@ def generate_nli_data(file_path):
     sections, types = df.Section_id, df.Type
 
     #Generate evidence texts for each claim.
-    for claim_id in range(len(claims)):
-        file_name = "data/CTs/" + primary_cts[claim_id] + ".json"
+    for claim_idx in range(len(claims)):
+        file_name = "data/CTs/" + primary_cts[claim_idx] + ".json"
 
         with open(file_name, 'r') as f:
             data = json.load(f)
             evidence = "primary trial: " 
 
             #Evidence for the primary trial is in form:
-            # "primary trial: sent_1. sent_2. (...) sent_n."           
-            for i in primary_indices[claim_id]:
-                evidence += data[sections[claim_id]][i]
+            # "primary trial: sentence_1. sent_2. (...) sent_n."           
+            for i in primary_indices[claim_idx]:
+                evidence += data[sections[claim_idx]][i] #only adds the sentences that are evidence.
                 evidence += " "
                 
         #If it is a comparative claim, also add evidence sentences from the 2nd trial.
-        if types[claim_id] == "Comparison":
-            file_name = "data/CTs/" + secondary_cts[claim_id] + ".json"
+        if types[claim_idx] == "Comparison":
+            file_name = "data/CTs/" + secondary_cts[claim_idx] + ".json"
 
             #Evidence for the secondary trial is in form:
             # "| secondary trial: sent_1. sent_2. (...) sent_n."
             with open(file_name, 'r') as f:
                 data = json.load(f)
                 evidence += " | secondary trial: "
-                for i in secondary_indices[claim_id]:
-                    evidence += data[sections[claim_id]][i]
+                for i in secondary_indices[claim_idx]:
+                    evidence += data[sections[claim_idx]][i]
                     evidence += " "
 
         evidence_texts.append(evidence)
@@ -66,7 +74,7 @@ def generate_nli_data(file_path):
     #One training instance is: "claim [SEP] full_evidence_text"
     joint_data = list()
     for i in range(len(claims)):
-        premise = claims[i]
+        premise = claims[i]                 # this guy, named these opposite :D
         hypothesis = evidence_texts[i]
         joint = premise + " [SEP] " + hypothesis
         joint_data.append(joint)
@@ -83,7 +91,7 @@ def generate_evidence_data(file_path):
         file_path (str): Path to the JSON of the dataset.
 
     Returns:
-        joint_data: List of training instances in form of "claim [SEP] candidate_sentence" (str)
+        joint_data: List of training instances in form of "claim [SEP] candidate_sentence" (str) 
         labels: List of labels, 0 if candidate_sentence is not evidence, 1 if it is
     '''
 
@@ -113,7 +121,8 @@ def generate_evidence_data(file_path):
 
         #If it is a comparative claim, also create a list of secondary-trial evidence sentences.
         if types[idx] == "Comparison":
-            file_name = "/home/ubuntu/nli4ct/Complete_dataset/CTs/" + secondary_cts[idx] + ".json"
+            # file_name = "/home/ubuntu/nli4ct/Complete_dataset/CTs/" + secondary_cts[idx] + ".json"
+            file_name = "data/CTs/" + secondary_cts[idx] + ".json"
 
             with open(file_name, 'r') as f:
                 data = json.load(f)
@@ -127,23 +136,23 @@ def generate_evidence_data(file_path):
     #Label is 0 if candidate sentece is not evidence for this claim, 1 if it is   
     labels = list() 
 
-    for claim_id in range(len(claims)):
-        claim = claims[claim_id]
-        primary_sents = primary_evidence_sentences[claim_id]
+    for claim_idx in range(len(claims)):
+        claim = claims[claim_idx]
+        primary_sents = primary_evidence_sentences[claim_idx]
 
         for sid in range(len(primary_sents)):
             candidate_sentence = primary_sents[sid]
             j = candidate_sentence + " [SEP] " + claim
             joint_data.append(j)
-            labels.append(sid in primary_indices[claim_id])
+            labels.append(sid in primary_indices[claim_idx])
 
-        if types[claim_id] == "Comparison":
-            secondary_sents = secondary_evidence_sentences[claim_id]
+        if types[claim_idx] == "Comparison":
+            secondary_sents = secondary_evidence_sentences[claim_idx]
             for sid in range(len(secondary_sents)):
                 candidate_sentence = secondary_sents[sid]
                 j = candidate_sentence + " [SEP] " + claim
                 joint_data.append(j)
-                labels.append(sid in secondary_indices[claim_id])
+                labels.append(sid in secondary_indices[claim_idx])
 
         labels = [1 if l else 0 for l in labels]
 

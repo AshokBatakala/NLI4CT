@@ -3,7 +3,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from transformers import Trainer, TrainingArguments
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from prepare_data import generate_evidence_data
+from pipeline.prepare_data import generate_evidence_data
 
 TRAIN_PATH = "data/train.json"
 DEV_PATH = "data/dev.json"
@@ -15,6 +15,7 @@ class CtDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
         self.encodings = encodings
         self.labels = labels
+        self.length = len( list(labels) )
 
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
@@ -22,7 +23,8 @@ class CtDataset(torch.utils.data.Dataset):
         return item
 
     def __len__(self):
-        return len(self.labels)
+        # return len(self.labels)
+        return self.length
 
 
 models = ["ynie/xlnet-large-cased-snli_mnli_fever_anli_R1_R2_R3-nli",
@@ -106,3 +108,6 @@ def train(model_name):
 
     #Save the fine-tuned NLI (textual entailment) model.
     trainer.save_model("model-evidence_selection")
+
+
+    

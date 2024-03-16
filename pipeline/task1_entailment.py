@@ -3,7 +3,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from transformers import Trainer, TrainingArguments
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from prepare_data import generate_nli_data
+from pipeline.prepare_data import generate_nli_data
 
 TRAIN_PATH = "data/train.json"
 DEV_PATH = "data/dev.json"
@@ -15,6 +15,7 @@ class CtDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
         self.encodings = encodings
         self.labels = labels
+        self.length = len( list(self.labels))
 
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
@@ -22,7 +23,8 @@ class CtDataset(torch.utils.data.Dataset):
         return item
 
     def __len__(self):
-        return len(self.labels)
+        # return len(self.labels) # it throws error if self.labels is a map object
+        return self.length
 
 
 models = ["ynie/xlnet-large-cased-snli_mnli_fever_anli_R1_R2_R3-nli",
@@ -48,14 +50,17 @@ def train(model_name):
     #model_name = "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli"
 
     #Load the models. Adjust max instance length to fit your machine.
+    # print(f"Loading model {model_name}...")
     tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=1024)
+    # print("came here...")
     model = AutoModelForSequenceClassification.from_pretrained(model_name,
                                  num_labels=2, ignore_mismatched_sizes=True)
+    
+    
 
     #Generate joint claim+[SEP]+evidence data.
     joint_train, labels_train = generate_nli_data(TRAIN_PATH)
     joint_dev, labels_dev= generate_nli_data(DEV_PATH)
-
     #Tokenize the data.    
     encoded_train = tokenizer(joint_train, return_tensors='pt',
                          truncation_strategy='only_first', add_special_tokens=True, padding=True)
@@ -65,11 +70,12 @@ def train(model_name):
     #Convert data into datasets
     train_dataset = CtDataset(encoded_train, labels_train)
     dev_dataset = CtDataset(encoded_dev, labels_dev)
-
     #Define the batch size to fit your GPU memory.
-    batch_size = 16
+    batch_size = 3 #16 
 
-    logging_steps = len(train_data["claims"]) // batch_size
+    logging_steps = len(joint_train) // batch_size
+    # logging_steps = 10
+
     output_name = f"finetuned-model"
 
     training_args = TrainingArguments(output_dir=output_name,
@@ -100,7 +106,7 @@ def train(model_name):
                     train_dataset=train_dataset,
                     eval_dataset=dev_dataset,
                     tokenizer=tokenizer)
-
+    
     #Start the training process.
     trainer.train()
 
