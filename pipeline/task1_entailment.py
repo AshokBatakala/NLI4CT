@@ -18,9 +18,25 @@ class CtDataset(torch.utils.data.Dataset):
         self.length = len( list(self.labels))
 
     def __getitem__(self, idx):
-        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels[idx])
+        # item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        # item['labels'] = torch.tensor(self.labels[idx])
+        
+        # /media/Ext_4T_SSD/ASHOK_NLP_DS207/NLI4CT_DS207/pipeline/task1_entailment.py:21: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+        # to avoid the above warning, 
+        item = {key: self.pick(val[idx]) for key, val in self.encodings.items()}
+        item['labels'] = self.pick(self.labels[idx])
+        
         return item
+    
+    def pick(self, object):
+        """
+        later, give a better name.
+        clones the tensor. if it's an int, it just creates a tensor with that int.
+        """
+        if isinstance(object, torch.Tensor):
+            return object.clone().detach()
+        else:
+            return torch.tensor(object)
 
     def __len__(self):
         # return len(self.labels) # it throws error if self.labels is a map object
@@ -76,7 +92,7 @@ def train(model_name):
     logging_steps = len(joint_train) // batch_size
     # logging_steps = 10
 
-    output_name = f"finetuned-model"
+    output_name = f"storage/finetuned-model"
 
     training_args = TrainingArguments(output_dir=output_name,
                                  per_device_train_batch_size=batch_size,
@@ -111,4 +127,4 @@ def train(model_name):
     trainer.train()
 
     #Save the fine-tuned NLI (textual entailment) model.
-    trainer.save_model("model-nli")
+    trainer.save_model("storage/model-nli")

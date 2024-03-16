@@ -107,7 +107,7 @@ def train(model_name):
     trainer.train()
 
     #Save the fine-tuned NLI (textual entailment) model.
-    trainer.save_model("model-evidence_selection")
+    trainer.save_model("storage/model-evidence_selection")
 
 
     
