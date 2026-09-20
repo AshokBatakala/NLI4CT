@@ -6,6 +6,8 @@ The implementation of the system for SemEval-2023 Task 7: Natural Language Infer
 Batakala Ashok, Manish Nath, Shubham Gehlot
 Indian Institute of Science, Bengaluru, India
 
+![Poster: Safe Biomedical Natural Language Inference for Clinical Trials](images/poster_full.png)
+
 ## Abstract
 
 Our study evaluates the performance of various LLMs on the NLI task on Clinical Trial data. We experimented with two prompting strategies: Chain-of-Thought (CoT) prompting, which encourages LLMs to generate step-by-step reasoning, and Zero-Shot prompting, which relies on the models' general language understanding capabilities without task-specific fine-tuning. We also experimented with different approaches for evidence retrieval.
@@ -24,10 +26,14 @@ Two prompting strategies were compared for inference:
 - **Zero-shot prompt**: `Evidence: [Evidence] Statement: [Hypothesis] Question: Answer in one word, is the statement a contradiction or an entailment? Answer:`
 - **Chain-of-Thought (CoT) prompt**: same as above, with `Let's think step by step.` appended to encourage step-by-step reasoning before the final answer.
 
+![Methodology: retrieval + zero-shot/CoT prompting + inference](images/methodology_diagram.png)
+
 ## Experiments
 
 - **Evidence retrieval models**: BERT, ClinicalBERT, BioBERT, and multi-qa-mpnet-base (Sentence-BERT with cosine similarity).
 - **Inference LLMs**: ChatGPT 3.5, Gemini, and GPT-4-based Copilot, evaluated with both Zero-shot and CoT prompting, broken down by CTR section (overall, adverse events, eligibility, intervention, results).
+
+![Evaluation metrics and per-section performance comparison for CoT and Zero-shot prompting](images/experiments_charts.png)
 
 ### Evidence Retrieval Results
 
